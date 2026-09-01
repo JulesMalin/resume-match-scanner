@@ -174,7 +174,11 @@
       </div>
     </div>
 
-    <div class="breakdown" id="breakdown"></div>
+    <div class="report-head">
+      <h3>Category scores &amp; what to change</h3>
+      <p class="sub">Four things an ATS and a recruiter weigh. Each is scored out of 100, with the specific fixes for this posting.</p>
+    </div>
+    <div class="report" id="report"></div>
 
     <div class="grid2">
       <div class="card">
@@ -189,11 +193,6 @@
       </div>
     </div>
 
-    <div class="card" style="margin-top:16px">
-      <h3>Fix these first</h3>
-      <p class="sub">The highest-leverage changes for this posting, in order.</p>
-      <ul class="fixes" id="fixes"></ul>
-    </div>
   </section>
 
   <style>
@@ -220,6 +219,26 @@
     .seccol.req .head{background:var(--good)} .seccol.opt .head{background:var(--warn)} .seccol.avo .head{background:var(--bad)}
     .seccol ul{list-style:none;border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;
       padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+
+    .report-head{margin-bottom:14px}
+    .report-head h3{font-size:18px;font-weight:700}
+    .report-head .sub{font-size:13.5px;color:var(--muted);margin-top:4px}
+    .report{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    @media(max-width:720px){.report{grid-template-columns:1fr}}
+    .cat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+      box-shadow:var(--shadow);padding:18px 20px;display:flex;flex-direction:column}
+    .cat-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:9px}
+    .cat-name{font-size:15px;font-weight:700}
+    .cat-score{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:30px;
+      font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap}
+    .cat-score small{font-size:13px;color:var(--faint);font-weight:600}
+    .cat .bar{margin-bottom:11px}
+    .pill{align-self:flex-start;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+      padding:3px 10px;border-radius:999px;margin-bottom:13px;border:1px solid currentColor}
+    .recs{list-style:none;display:flex;flex-direction:column;gap:9px}
+    .recs li{display:flex;gap:9px;font-size:13px;line-height:1.42;color:var(--ink)}
+    .recs li::before{content:"→";color:var(--accent);font-weight:700;flex:none}
+    .recs b{font-weight:600} .recs i{color:var(--accent-ink);font-style:italic}
   </style>
 
   <section class="guide">
@@ -434,6 +453,7 @@
         {name:"Impact & numbers", pts:impactScore, detail: bl.length?(Math.round(ratio*100)+"% of bullets"):"no bullets found"},
         {name:"Wording & verbs", pts:hygiene, detail: hygDetail}
       ],
+      coverageScore:clamp(coverage), titleScore:clamp(titleScore), impactScore:impactScore, hygiene:hygiene,
       hit:hit, miss:miss, title:title, titleHit:titleHit,
       impactRatio:ratio, bulletCount:bl.length, weak:weak, wordy:wordy,
       verbRatio:verbRatio, longBullets:longBullets, wc:wc
@@ -448,37 +468,60 @@
     return ["Major gaps","This resume and this posting barely overlap. Rework it around the posting before you apply, or pick a closer-fit role."];
   }
 
-  function buildFixes(a){
-    var out=[];
+  function statusOf(s){ return s>=80?"Strong": s>=60?"Solid": s>=40?"Needs work":"Weak"; }
+
+  function categoryReport(a){
+    var cats=[];
+
+    // 1. Keyword coverage
+    var r1=[];
     if(a.miss.length){
-      out.push("<b>Add the terms your experience supports.</b> You're missing "+a.miss.length+" of the "+(a.miss.length+a.hit.length)+" terms this posting emphasizes. Work the real ones into your bullets and skills line, spelled the way the posting spells them.");
+      r1.push("Add the <b>"+a.miss.length+" missing term"+(a.miss.length>1?"s":"")+"</b> your experience supports (listed below), spelled exactly as the posting spells them.");
+      r1.push("Put the tools in a plain <b>Skills line</b> the parser can read, not inside a graphic, icon, or table.");
     }
+    if(a.coverageScore<60){ r1.push("You're under the ~60% overlap most matchers reward. Prioritize the posting's named tools and skills first."); }
+    r1.push("Mirror the posting's exact phrasing. “A/B testing” and “experimentation” count as different terms to a matcher.");
+    if(!a.miss.length){ r1.unshift("Strong overlap. Keep these terms in the top third, where a 6-second scan lands."); }
+    cats.push({name:"Keyword coverage", score:a.coverageScore, recs:r1});
+
+    // 2. Title match
+    var r2=[];
     if(a.title.role && !a.titleHit){
-      out.push("<b>Match the title language.</b> This reads as a "+(a.title.line?("“"+a.title.line+"”"):("“"+a.title.role+"”"))+" role. Put that exact phrase on your resume so the matcher and the recruiter both see it.");
+      r2.push("Add the exact title "+(a.title.line?("“"+a.title.line+"”"):("“"+a.title.role+"”"))+" to your resume, under your name or as your most recent role.");
+      r2.push("Recruiters filter by title first. A near-miss title is one of the most common silent rejects.");
+    } else if(a.title.role && a.titleHit){
+      r2.push("The role title appears on your resume. Keep it in the top third.");
+      r2.push("If your internal title differs, add the standard title in parentheses so both the ATS and a human match it.");
+    } else {
+      r2.push("No clear title detected in the posting. Make sure your target title still appears near the top of your resume.");
+      r2.push("Use the standard industry title, not a company-specific one.");
     }
-    if(a.bulletCount && a.impactRatio<0.5){
-      out.push("<b>Put numbers in your bullets.</b> Only "+Math.round(a.impactRatio*100)+"% of your bullets carry a figure. Use the formula: <i>Accomplished [X] as measured by [Y], by doing [Z]</i>. “Boosted conversion 10% by deploying a churn model” beats “responsible for modeling.”");
+    cats.push({name:"Title match", score:a.titleScore, recs:r2});
+
+    // 3. Impact & numbers
+    var r3=[];
+    if(a.bulletCount===0){
+      r3.push("No bullet lines detected. Break each role into three to five bullet points.");
+      r3.push("Use the formula: <i>Accomplished [X] as measured by [Y], by doing [Z]</i>.");
+    } else {
+      r3.push("Write every bullet with the formula: <i>Accomplished [X] as measured by [Y], by doing [Z]</i>.");
+      if(a.impactRatio<0.5){ r3.push("Only <b>"+Math.round(a.impactRatio*100)+"%</b> of your bullets carry a number. Aim for at least half."); }
+      r3.push("Lead with the outcome, then the method: “$1.2M saved by rebuilding the churn model” beats “built a churn model.”");
+      r3.push("No hard metric? Use scope instead: rows processed, users affected, hours saved, teams served.");
     }
-    if(a.bulletCount>=3 && a.verbRatio<0.3){
-      out.push("<b>Open bullets with a strong action verb.</b> Most of yours don't. Lead with: Analyzed, Modeled, Engineered, Optimized, Predicted, Automated, Visualized, Extracted, Implemented, Deployed, Reduced, Increased.");
-    }
-    if(a.weak){
-      out.push("<b>Rewrite "+a.weak+" weak line"+(a.weak>1?"s":"")+".</b> Phrases like “responsible for” and “helped with” describe activity, not impact. Start with what changed because of you.");
-    }
-    if(a.wordy && a.wordy.length){
-      var swaps=a.wordy.map(function(p){return "“"+p[0]+"” → “"+p[1]+"”";}).join(", ");
-      out.push("<b>Trim wordy phrases.</b> "+swaps+". Shorter reads as more senior.");
-    }
-    if(a.longBullets){
-      out.push("<b>Shorten "+a.longBullets+" long bullet"+(a.longBullets>1?"s":"")+".</b> Keep each to two lines, and no more than five bullets per role. Reviewers rarely read past the first three.");
-    }
-    if(a.wc>950){
-      out.push("<b>Cut it down.</b> Your resume runs long ("+a.wc+" words). Unless you have 8+ years, keep it to one page so the reader gets to the good parts.");
-    }
-    if(!out.length){
-      out.push("<b>You're in good shape for this one.</b> Coverage, title, impact, and wording all check out. Give it a final read for tone and send it as a PDF.");
-    }
-    return out;
+    cats.push({name:"Impact & numbers", score:a.impactScore, recs:r3});
+
+    // 4. Wording & verbs
+    var r4=[];
+    if(a.verbRatio<0.3 && a.bulletCount>=3){ r4.push("Open bullets with a <b>strong action verb</b>: Analyzed, Modeled, Engineered, Optimized, Predicted, Automated, Deployed."); }
+    if(a.weak){ r4.push("Rewrite <b>"+a.weak+" weak line"+(a.weak>1?"s":"")+"</b> that start with “responsible for” or “helped with.” Lead with what changed because of you."); }
+    if(a.wordy.length){ r4.push("Trim wordiness: "+a.wordy.map(function(p){return "“"+p[0]+"” → “"+p[1]+"”";}).join(", ")+"."); }
+    if(a.longBullets){ r4.push("Shorten <b>"+a.longBullets+" long bullet"+(a.longBullets>1?"s":"")+"</b> to two lines. Five bullets max per role; reviewers rarely read past the first three."); }
+    if(a.wc>950){ r4.push("Trim to one page. You're at <b>"+a.wc+" words</b>; unless you have 8+ years, keep only the strongest lines."); }
+    r4.push("Cut technical jargon a recruiter won't know. The first reader is often non-technical.");
+    cats.push({name:"Wording & verbs", score:a.hygiene, recs:r4});
+
+    return cats;
   }
 
   var lastR="",lastJ="";
@@ -504,16 +547,21 @@
     $("#verdictTitle").textContent=vd[0];
     $("#verdictText").textContent=vd[1];
 
-    // breakdown
-    var bd=$("#breakdown"); bd.innerHTML="";
-    a.metrics.forEach(function(m){
-      var el=document.createElement("div"); el.className="metric";
-      el.innerHTML='<div class="top"><span class="name">'+m.name+'</span>'+
-        '<span class="pts">'+m.pts+' &nbsp;·&nbsp; '+m.detail+'</span></div>'+
-        '<div class="bar"><i></i></div>';
-      bd.appendChild(el);
-      var fill=el.querySelector("i"); fill.style.background=bandColor(m.pts);
-      requestAnimationFrame(function(){ fill.style.width=m.pts+"%"; });
+    // category report: score + status + recommendations per category
+    var rep=$("#report"); rep.innerHTML="";
+    categoryReport(a).forEach(function(c){
+      var band=bandColor(c.score);
+      var el=document.createElement("div"); el.className="cat";
+      var recsHtml=c.recs.map(function(r){return "<li><span>"+r+"</span></li>";}).join("");
+      el.innerHTML=
+        '<div class="cat-top"><span class="cat-name">'+c.name+'</span>'+
+          '<span class="cat-score" style="color:'+band+'">'+c.score+'<small>/100</small></span></div>'+
+        '<div class="bar"><i></i></div>'+
+        '<span class="pill" style="color:'+band+'">'+statusOf(c.score)+'</span>'+
+        '<ul class="recs">'+recsHtml+'</ul>';
+      rep.appendChild(el);
+      var fill=el.querySelector(".bar > i"); fill.style.background=band;
+      requestAnimationFrame(function(){ fill.style.width=c.score+"%"; });
     });
 
     // chips
@@ -523,14 +571,6 @@
     var hc=$("#hitChips"); hc.innerHTML="";
     if(a.hit.length){ a.hit.slice(0,30).forEach(function(t){ var c=document.createElement("span"); c.className="chip hit"; c.textContent=t; hc.appendChild(c); }); }
     else { hc.innerHTML='<span class="empty">No overlap yet. Start by mirroring the posting’s core terms.</span>'; }
-
-    // fixes
-    var fx=$("#fixes"); fx.innerHTML="";
-    buildFixes(a).forEach(function(html,i){
-      var li=document.createElement("li");
-      li.innerHTML='<span class="mk">'+(i+1)+'</span><span>'+html+'</span>';
-      fx.appendChild(li);
-    });
 
     $("#results").classList.add("show");
   }

@@ -196,9 +196,85 @@
     </div>
   </section>
 
+  <style>
+    .guide{margin-top:40px}
+    .guide-head{margin-bottom:16px}
+    .guide-head .eyebrow{color:var(--accent-ink)}
+    .guide-head h2{font-size:clamp(22px,3.4vw,30px);font-weight:800;margin-top:6px}
+    .guide-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+    @media(max-width:720px){.guide-grid{grid-template-columns:1fr}}
+    .check7{list-style:none;display:flex;flex-direction:column;gap:11px}
+    .check7 li{display:flex;gap:11px;font-size:14px;line-height:1.4}
+    .check7 .bx{flex:none;width:18px;height:18px;border:2px solid var(--accent);border-radius:5px;margin-top:1px}
+    .formula{background:var(--ink);color:var(--surface);border-radius:12px;padding:16px 18px;
+      font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;text-align:center;line-height:1.4}
+    .formula .x{color:var(--accent)}
+    :root[data-theme="dark"] .formula, :root:not([data-theme="light"]) .formula{background:#000;color:#e8eef6}
+    @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .formula{background:#000;color:#e8eef6}}
+    .verbbank{margin-top:14px}
+    .verbbank .lbl,.secgroup .lbl{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+    .sections3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    @media(max-width:560px){.sections3{grid-template-columns:1fr}}
+    .seccol .head{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+      padding:7px 10px;border-radius:8px 8px 0 0;color:#fff}
+    .seccol.req .head{background:var(--good)} .seccol.opt .head{background:var(--warn)} .seccol.avo .head{background:var(--bad)}
+    .seccol ul{list-style:none;border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;
+      padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+  </style>
+
+  <section class="guide">
+    <div class="guide-head">
+      <div class="eyebrow">The full method</div>
+      <h2>What a strong data resume needs</h2>
+    </div>
+    <div class="guide-grid">
+      <div class="card">
+        <h3>The 7-point checklist</h3>
+        <p class="sub">Everything above the scanner can't see from pasted text. Tick all seven before you apply.</p>
+        <ul class="check7">
+          <li><span class="bx"></span><span>Optimal format, layout, and section order for your experience level.</span></li>
+          <li><span class="bx"></span><span>No spelling or grammar errors. Run it through Grammarly.</span></li>
+          <li><span class="bx"></span><span>Every link works: LinkedIn, GitHub, portfolio.</span></li>
+          <li><span class="bx"></span><span>No confusing jargon or unexplained abbreviations.</span></li>
+          <li><span class="bx"></span><span>One page.</span></li>
+          <li><span class="bx"></span><span>Aligned to the specific job description you're applying for.</span></li>
+          <li><span class="bx"></span><span>Saved and submitted as a PDF.</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Write every bullet with the formula</h3>
+        <p class="sub">Show impact, don't just list duties.</p>
+        <div class="formula">Accomplished <span class="x">[X]</span> as measured by <span class="x">[Y]</span>, by doing <span class="x">[Z]</span>.</div>
+        <div class="verbbank">
+          <div class="lbl">Open with a strong verb</div>
+          <div class="chips">
+            <span class="chip">Analyzed</span><span class="chip">Modeled</span><span class="chip">Engineered</span>
+            <span class="chip">Optimized</span><span class="chip">Predicted</span><span class="chip">Automated</span>
+            <span class="chip">Visualized</span><span class="chip">Extracted</span><span class="chip">Implemented</span>
+            <span class="chip">Transformed</span><span class="chip">Classified</span><span class="chip">Validated</span>
+            <span class="chip">Deployed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Which sections to include</h3>
+      <p class="sub">Space is scarce. Keep what earns interviews, cut what doesn't.</p>
+      <div class="sections3">
+        <div class="seccol req"><div class="head">Required</div>
+          <ul><li>Contact information</li><li>Professional experience</li><li>Education (with GPA)</li><li>Technical skills</li></ul></div>
+        <div class="seccol opt"><div class="head">Optional</div>
+          <ul><li>Experience summary</li><li>Projects</li><li>Certifications</li><li>Publications</li></ul></div>
+        <div class="seccol avo"><div class="head">Avoid</div>
+          <ul><li>Interests</li><li>Hobbies</li><li>Volunteer experience</li><li>Side hustles</li></ul></div>
+      </div>
+    </div>
+  </section>
+
   <footer>
     <span><span class="name">Built by Jules Malin.</span> Follow for un-hyped data science and AI advice.</span>
-    <span>Keyword and format scoring. Not affiliated with any ATS vendor.</span>
+    <span>Based on the Ascend Data Science Resume Guide &amp; Checklist. Keyword and format scoring; not affiliated with any ATS vendor.</span>
   </footer>
 </div>
 
@@ -232,6 +308,15 @@
 
   var ROLES=["analyst","engineer","scientist","manager","developer","architect","consultant",
    "specialist","lead","director","designer","administrator"];
+
+  // From the Ascend Data Science Resume Guide
+  var ACTION_VERBS=["analyzed","modeled","engineered","optimized","predicted","automated","visualized",
+   "extracted","experimented","interpreted","implemented","transformed","classified","validated","deployed",
+   "built","developed","designed","led","launched","reduced","increased","improved","forecasted","delivered",
+   "boosted","drove","cut","accelerated","scaled"];
+  var WORDY=[["in order to","to"],["due to the fact that","because"],["for the purpose of","for"],
+   ["make a decision","decide"],["a number of","several"],["in the event that","if"],
+   ["with the exception of","except"],["in spite of the fact that","although"]];
 
   var STOP=("a an the and or but if then else for to of in on at by with from as is are was were be been being "+
    "this that these those it its we you they i he she our your their my his her will would can could should may "+
@@ -320,24 +405,38 @@
     var ratio = bl.length ? withNum/bl.length : 0;
     var impactScore = clamp(ratio*140);
 
-    // hygiene
+    // action verbs: does each bullet open with a strong verb? (Ascend guide)
+    var verbStart=bl.filter(function(l){
+      var first=l.replace(/^[\s•\-*•–—\.]+/,"").split(/[\s,]/)[0].toLowerCase();
+      return ACTION_VERBS.indexOf(first)>-1;
+    }).length;
+    var verbRatio = bl.length ? verbStart/bl.length : 0;
+
+    // long bullets (Ascend: keep bullets to ~2 lines)
+    var longBullets=bl.filter(function(l){return l.length>240;}).length;
+
+    // wording & hygiene (Ascend: weak phrases, wordiness, length)
     var weak=(rN.match(/responsible for|helped with|worked on|duties included|assisted with/g)||[]).length;
+    var wordy=WORDY.filter(function(p){ return rN.indexOf(" "+p[0]+" ")>-1; });
     var wc=words(resume).length;
-    var hygiene=100 - weak*15 - (wc>950?15:0);
+    var hygiene=100 - weak*12 - wordy.length*8 - (verbRatio<0.3 && bl.length>=3 ? 15:0) - (wc>950?10:0);
     hygiene=clamp(hygiene);
 
-    var overall = clamp(coverage*0.5 + titleScore*0.15 + impactScore*0.20 + hygiene*0.15);
+    var overall = clamp(coverage*0.45 + titleScore*0.15 + impactScore*0.20 + hygiene*0.20);
+
+    var hygDetail = (weak+wordy.length) ? ((weak+wordy.length)+" to fix") : (verbRatio<0.3&&bl.length>=3?"weak verbs":"clean");
 
     return {
       overall:overall,
       metrics:[
         {name:"Keyword coverage", pts:clamp(coverage), detail:hit.length+" of "+required.length+" terms"},
         {name:"Title match", pts:clamp(titleScore), detail: title.role?(titleHit?"present":"missing"):"no clear title"},
-        {name:"Impact & numbers", pts:impactScore, detail: bl.length?(Math.round(ratio*100)+"% of lines"):"no bullets found"},
-        {name:"Resume hygiene", pts:hygiene, detail: weak?(weak+" weak phrase"+(weak>1?"s":"")):"clean"}
+        {name:"Impact & numbers", pts:impactScore, detail: bl.length?(Math.round(ratio*100)+"% of bullets"):"no bullets found"},
+        {name:"Wording & verbs", pts:hygiene, detail: hygDetail}
       ],
       hit:hit, miss:miss, title:title, titleHit:titleHit,
-      impactRatio:ratio, bulletCount:bl.length, weak:weak, wc:wc
+      impactRatio:ratio, bulletCount:bl.length, weak:weak, wordy:wordy,
+      verbRatio:verbRatio, longBullets:longBullets, wc:wc
     };
   }
 
@@ -358,16 +457,26 @@
       out.push("<b>Match the title language.</b> This reads as a "+(a.title.line?("“"+a.title.line+"”"):("“"+a.title.role+"”"))+" role. Put that exact phrase on your resume so the matcher and the recruiter both see it.");
     }
     if(a.bulletCount && a.impactRatio<0.5){
-      out.push("<b>Put numbers in your bullets.</b> Only "+Math.round(a.impactRatio*100)+"% of your lines carry a figure. Lead each with an outcome and a number: “$1.2M saved by…” beats “responsible for…”");
+      out.push("<b>Put numbers in your bullets.</b> Only "+Math.round(a.impactRatio*100)+"% of your bullets carry a figure. Use the formula: <i>Accomplished [X] as measured by [Y], by doing [Z]</i>. “Boosted conversion 10% by deploying a churn model” beats “responsible for modeling.”");
+    }
+    if(a.bulletCount>=3 && a.verbRatio<0.3){
+      out.push("<b>Open bullets with a strong action verb.</b> Most of yours don't. Lead with: Analyzed, Modeled, Engineered, Optimized, Predicted, Automated, Visualized, Extracted, Implemented, Deployed, Reduced, Increased.");
     }
     if(a.weak){
       out.push("<b>Rewrite "+a.weak+" weak line"+(a.weak>1?"s":"")+".</b> Phrases like “responsible for” and “helped with” describe activity, not impact. Start with what changed because of you.");
+    }
+    if(a.wordy && a.wordy.length){
+      var swaps=a.wordy.map(function(p){return "“"+p[0]+"” → “"+p[1]+"”";}).join(", ");
+      out.push("<b>Trim wordy phrases.</b> "+swaps+". Shorter reads as more senior.");
+    }
+    if(a.longBullets){
+      out.push("<b>Shorten "+a.longBullets+" long bullet"+(a.longBullets>1?"s":"")+".</b> Keep each to two lines, and no more than five bullets per role. Reviewers rarely read past the first three.");
     }
     if(a.wc>950){
       out.push("<b>Cut it down.</b> Your resume runs long ("+a.wc+" words). Unless you have 8+ years, keep it to one page so the reader gets to the good parts.");
     }
     if(!out.length){
-      out.push("<b>You're in good shape for this one.</b> Coverage, title, and impact all check out. Give it a final read for tone and send it.");
+      out.push("<b>You're in good shape for this one.</b> Coverage, title, impact, and wording all check out. Give it a final read for tone and send it as a PDF.");
     }
     return out;
   }

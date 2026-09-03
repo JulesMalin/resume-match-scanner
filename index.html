@@ -395,19 +395,81 @@
   // Synonym / acronym groups so a resume "ML" matches a JD "machine learning"
   // first item in each group is the display/canonical form
   var SYNONYMS=[
-   ["machine learning","ml"],["deep learning","dl"],["nlp","natural language processing"],
-   ["llm","large language model","large language models","llms"],
-   ["a/b testing","ab testing","a b testing","split testing","experimentation","experiment","experiments"],
-   ["data visualization","visualization","viz","dataviz"],["bi","business intelligence"],
-   ["etl","extract transform load"],["kpi","kpis","key performance indicator","key performance indicators"],
-   ["statistics","statistical","stats"],["sql","structured query language"],
-   ["dashboards","dashboard","dashboarding"],["predictive modeling","predictive models","predictive analytics"],
-   ["eda","exploratory data analysis"],["ci/cd","cicd","continuous integration"],
-   ["aws","amazon web services"],["gcp","google cloud platform"],["azure","microsoft azure"],
-   ["feature engineering","feature extraction"],["time series","time-series"],
-   ["data pipeline","data pipelines","pipelines"],["product analytics","product analysis"],
-   ["stakeholder management","stakeholders","stakeholder"],["scikit-learn","sklearn","sci-kit learn"]
-  ];
+   // concepts
+   ["machine learning","ml","machine-learning","ml modeling","ml models"],
+   ["deep learning","dl","deep-learning","deep neural networks"],
+   ["nlp","natural language processing","natural-language processing","text mining","text analytics"],
+   ["llm","llms","large language model","large language models","large-language model","foundation model","foundation models"],
+   ["computer vision","cv","image recognition","image classification"],
+   ["generative ai","gen ai","genai","generative artificial intelligence"],
+   ["artificial intelligence","ai"],
+   ["a/b testing","ab testing","a b testing","a/b test","a/b tests","ab test","ab tests","split testing","split test","experimentation","experiment","experiments","controlled experiment","online experiment"],
+   ["data visualization","data visualisation","visualization","visualisation","viz","dataviz","data viz","data-visualization"],
+   ["bi","business intelligence"],
+   ["etl","elt","extract transform load","extract-transform-load","extract load transform","etl pipeline","etl pipelines"],
+   ["kpi","kpis","key performance indicator","key performance indicators","key metric","key metrics"],
+   ["statistics","statistical","stats","statistical analysis","statistical modeling"],
+   ["sql","structured query language","t-sql","tsql","pl/sql","plsql","ansi sql"],
+   ["nosql","no sql","non-relational","non relational"],
+   ["dashboards","dashboard","dashboarding"],
+   ["reporting","reports","report","reporting suite"],
+   ["predictive modeling","predictive modelling","predictive model","predictive models","predictive analytics"],
+   ["eda","exploratory data analysis","exploratory analysis"],
+   ["ci/cd","cicd","ci cd","continuous integration","continuous delivery","continuous deployment"],
+   ["mlops","ml ops","ml-ops","model deployment","model monitoring","model serving"],
+   ["rag","retrieval augmented generation","retrieval-augmented generation"],
+   ["prompt engineering","prompting","prompt design","prompt optimization"],
+   ["feature engineering","feature extraction","feature selection"],
+   ["time series","time-series","timeseries","time series analysis","time series forecasting"],
+   ["forecasting","forecast","forecasts","demand forecasting","sales forecasting"],
+   ["regression","linear regression","logistic regression","regression analysis","regression models"],
+   ["classification","classifier","classifiers","classification models"],
+   ["clustering","cluster analysis","k-means","kmeans","k means"],
+   ["recommendation systems","recommendation system","recommender","recommender system","recommender systems","recommendation engine"],
+   ["neural network","neural networks","neural net","deep neural network","dnn","cnn","rnn"],
+   ["gradient boosting","xgboost","lightgbm","gbm","gradient boosted trees","catboost"],
+   ["random forest","random forests"],
+   ["causal inference","causal analysis","causal modeling"],
+   ["segmentation","customer segmentation","market segmentation"],
+   ["cohort analysis","cohort","cohorts"],
+   ["funnel analysis","conversion funnel","funnel"],
+   ["conversion rate","conversion","conversions","cvr"],
+   ["lifetime value","ltv","clv","customer lifetime value"],
+   ["attribution","marketing attribution","attribution modeling"],
+   ["churn","customer churn","churn prediction","churn rate","attrition"],
+   ["retention","customer retention","retention rate"],
+   // data / pipelines
+   ["data pipeline","data pipelines","pipeline","pipelines","data-pipeline"],
+   ["data warehouse","data warehousing","dwh","data-warehouse","warehouse"],
+   ["data modeling","data modelling","dimensional modeling","data models"],
+   ["data quality","data integrity","data validation"],
+   ["data cleaning","data cleansing","data wrangling","data munging","data preparation","data prep"],
+   ["data engineering","data engineer"],
+   ["big data","bigdata"],
+   ["api","apis","rest api","rest apis","restful","rest","endpoints"],
+   ["stakeholder management","stakeholders","stakeholder","stakeholder engagement"],
+   ["product analytics","product analysis","product data"],
+   // languages / libs
+   ["python","py"],["javascript","js"],["typescript","ts"],
+   ["scikit-learn","sklearn","sci-kit learn","scikit learn"],
+   ["tensorflow","tensor flow","tf"],["pytorch","py torch","torch"],
+   ["pandas"],["numpy","np"],
+   // platforms / tools
+   ["aws","amazon web services"],["gcp","google cloud","google cloud platform"],
+   ["azure","microsoft azure","azure cloud"],
+   ["spark","apache spark","pyspark"],["hadoop","apache hadoop","hdfs"],
+   ["kafka","apache kafka"],["airflow","apache airflow"],
+   ["kubernetes","k8s"],["docker","containerization","containers","container"],
+   ["terraform","infrastructure as code","iac"],
+   ["snowflake","snowpark"],["redshift","amazon redshift"],["bigquery","big query","google bigquery"],
+   ["databricks"],["sagemaker","aws sagemaker","amazon sagemaker"],
+   ["tableau"],["looker","looker studio","google data studio","data studio"],
+   ["power bi","powerbi","power-bi"],["power query"],
+   ["excel","microsoft excel","ms excel","spreadsheets","spreadsheet"],
+   ["google sheets","gsheets"],
+   ["postgresql","postgres","postgre","psql"],["mongodb","mongo"],
+   ["git","version control"],["jira"],["dbt"]
+  ].filter(function(g){return g.length;});
   var SYN_MAP={}; SYNONYMS.forEach(function(g){ g.forEach(function(t){ SYN_MAP[t]=g; }); });
   var KNOWNSET={}; KNOWN.forEach(function(k){ KNOWNSET[k.trim()]=1; });
   function groupOf(term){ return SYN_MAP[term] || [term]; }
@@ -441,7 +503,8 @@
    "new well like using use used across within our their you your they will who what able make made makes "+
    "day days week weeks month months apply application located remote hybrid onsite office "+
    "build building define defining hiring decision decisions drive driving deliver delivering "+
-   "own owning turn turning partner partnering comfort clear").split(/\s+/);
+   "own owning turn turning partner partnering comfort clear "+
+   "data senior junior scientist analyst analysts engineer engineers developer specialist lead manager").split(/\s+/);
   var STOPSET={}; STOP.forEach(function(w){STOPSET[w]=1;});
 
   function norm(t){ return (" "+t.toLowerCase()+" ").replace(/[^a-z0-9+#./ -]/g," ").replace(/\s+/g," "); }
@@ -502,9 +565,19 @@
     }
 
     // required terms = known skills in JD + top JD keywords, canonicalized + deduped
-    var reqRaw=[];
+    var reqRaw=[], phraseWords={};
     KNOWN.forEach(function(k){ if(hasTerm(jN,k)) reqRaw.push(canonical(k.trim())); });
+    // capture whole synonym phrases present in the JD, and remember their component words
+    SYNONYMS.forEach(function(g){
+      var present=false;
+      g.forEach(function(s){ if(hasTerm(jN,s)) present=true; });
+      if(present){
+        reqRaw.push(g[0]);
+        g.forEach(function(s){ s.split(" ").forEach(function(w){ if(w.length>2) phraseWords[w]=1; }); });
+      }
+    });
     extractKeywords(jN).forEach(function(k){
+      if(phraseWords[k]) return;  // skip words that are part of a captured phrase
       var c=canonical(k);
       var covered=reqRaw.some(function(rq){ return rq.indexOf(c)>-1 || c.indexOf(rq)>-1; });
       if(!covered) reqRaw.push(c);
@@ -688,7 +761,7 @@
     var lines=[];
     SKILL_GROUPS.forEach(function(g){
       var seen={}, disp=[];
-      g.items.forEach(function(it){ var c=canonical(it); if(!seen[c] && (hasTerm(rN,it)||hasTerm(rN,c))){ seen[c]=1; disp.push(titleCase(it)); } });
+      g.items.forEach(function(it){ var c=canonical(it); if(!seen[c] && presentSyn(rN,c)){ seen[c]=1; disp.push(titleCase(it)); } });
       if(disp.length) lines.push(g.name+": "+disp.join(", "));
     });
     return lines;

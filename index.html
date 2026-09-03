@@ -183,14 +183,27 @@
     <div class="grid2">
       <div class="card">
         <h3>Missing from your resume</h3>
-        <p class="sub">Terms the posting leans on that your resume doesn't mention. Add the ones your real experience backs up. Never invent them.</p>
+        <p class="sub">Terms the posting leans on that your resume doesn't mention. <b>★ marks a must-have.</b> Add the ones your real experience backs up, and never invent them.</p>
         <div class="chips" id="missChips"></div>
       </div>
       <div class="card">
         <h3>Already matched</h3>
-        <p class="sub">Terms you and the posting share. These are what keeps you in the pile.</p>
+        <p class="sub">Terms you and the posting share, counting synonyms (ML = machine learning). These keep you in the pile.</p>
         <div class="chips" id="hitChips"></div>
       </div>
+    </div>
+
+    <div class="card" id="skillsCard" style="margin-top:16px">
+      <h3>Your Technical Skills line</h3>
+      <p class="sub">The tools found on your resume, grouped the way the guide recommends. Copy it in, then reorder to put the posting's must-haves first.</p>
+      <pre class="codeblock" id="skillsBlock"></pre>
+      <button class="btn-ghost copybtn" id="copySkills" type="button">Copy skills</button>
+    </div>
+
+    <div class="card" id="annotCard" style="margin-top:16px">
+      <h3>Your resume, annotated</h3>
+      <p class="sub"><span class="legend ok">matched term</span> <span class="legend fix">phrase to fix</span> &nbsp; Green terms line up with the posting; red marks weak openers, cliches, wordiness, and pronouns.</p>
+      <div class="annot" id="annot"></div>
     </div>
 
   </section>
@@ -240,6 +253,26 @@
     .recs li{display:flex;gap:9px;font-size:13px;line-height:1.42;color:var(--ink)}
     .recs li::before{content:"→";color:var(--accent);font-weight:700;flex:none}
     .recs b{font-weight:600} .recs i{color:var(--accent-ink);font-style:italic}
+
+    .chip.must{background:color-mix(in srgb,var(--bad) 12%,transparent);font-weight:700}
+    .codeblock{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+      padding:14px 16px;font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.65;
+      white-space:pre-wrap;color:var(--ink);overflow-x:auto;margin-top:2px}
+    .copybtn{margin-top:12px;padding:9px 16px;font-size:14px}
+    .legend{display:inline-flex;align-items:center;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;margin-right:6px}
+    .legend.ok{background:color-mix(in srgb,var(--good) 22%,transparent);color:var(--good)}
+    .legend.fix{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad)}
+    .annot{margin-top:8px;max-height:360px;overflow:auto;background:var(--surface-2);
+      border:1px solid var(--line);border-radius:10px;padding:16px 18px;
+      font-size:13.5px;line-height:1.75;white-space:pre-wrap;word-break:break-word;color:var(--ink)}
+    .annot mark.ok{background:color-mix(in srgb,var(--good) 26%,transparent);color:inherit;border-radius:3px;padding:0 2px}
+    .annot mark.fix{background:color-mix(in srgb,var(--bad) 24%,transparent);color:inherit;border-radius:3px;padding:0 2px}
+    .brewer{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
+    .brewer select,.brewer input{font-family:inherit;font-size:14px;padding:10px 12px;
+      border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);width:100%}
+    .brewer select:focus,.brewer input:focus{outline:2px solid var(--accent);outline-offset:1px}
+    .brout{background:var(--accent-soft);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+      font-size:15px;font-weight:600;color:var(--ink);min-height:52px;line-height:1.4}
   </style>
 
   <section class="guide">
@@ -289,6 +322,19 @@
         <div class="seccol avo"><div class="head">Avoid</div>
           <ul><li>Interests</li><li>Hobbies</li><li>Volunteer experience</li><li>Side hustles</li></ul></div>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Bullet rewriter</h3>
+      <p class="sub">Turn a task into an impact bullet with the formula. Fill the three parts and copy the result.</p>
+      <div class="brewer">
+        <select id="brVerb" aria-label="Action verb"></select>
+        <input id="brX" type="text" placeholder="What changed, and by how much (e.g. churn by 10%)">
+        <input id="brY" type="text" placeholder="How it's measured (e.g. 90-day retention)">
+        <input id="brZ" type="text" placeholder="What you did (e.g. deploying a predictive model)">
+      </div>
+      <div class="brout" id="brOut"></div>
+      <button class="btn-ghost copybtn" id="brCopy" type="button">Copy bullet</button>
     </div>
   </section>
 
@@ -346,6 +392,43 @@
   // Expanded weak / passive openers (guide covers a few; rest is standard expertise)
   var WEAK_RE=/responsible for|helped with|worked on|duties included|assisted with|involved in|tasked with|participated in|contributed to|in charge of|responsible of/g;
 
+  // Synonym / acronym groups so a resume "ML" matches a JD "machine learning"
+  // first item in each group is the display/canonical form
+  var SYNONYMS=[
+   ["machine learning","ml"],["deep learning","dl"],["nlp","natural language processing"],
+   ["llm","large language model","large language models","llms"],
+   ["a/b testing","ab testing","a b testing","split testing","experimentation","experiment","experiments"],
+   ["data visualization","visualization","viz","dataviz"],["bi","business intelligence"],
+   ["etl","extract transform load"],["kpi","kpis","key performance indicator","key performance indicators"],
+   ["statistics","statistical","stats"],["sql","structured query language"],
+   ["dashboards","dashboard","dashboarding"],["predictive modeling","predictive models","predictive analytics"],
+   ["eda","exploratory data analysis"],["ci/cd","cicd","continuous integration"],
+   ["aws","amazon web services"],["gcp","google cloud platform"],["azure","microsoft azure"],
+   ["feature engineering","feature extraction"],["time series","time-series"],
+   ["data pipeline","data pipelines","pipelines"],["product analytics","product analysis"],
+   ["stakeholder management","stakeholders","stakeholder"],["scikit-learn","sklearn","sci-kit learn"]
+  ];
+  var SYN_MAP={}; SYNONYMS.forEach(function(g){ g.forEach(function(t){ SYN_MAP[t]=g; }); });
+  var KNOWNSET={}; KNOWN.forEach(function(k){ KNOWNSET[k.trim()]=1; });
+  function groupOf(term){ return SYN_MAP[term] || [term]; }
+  function canonical(term){ var g=SYN_MAP[term]; return g? g[0] : term; }
+  // returns the synonym string actually present in normalized text, or null
+  function presentSyn(normText,term){
+    var g=groupOf(term);
+    for(var i=0;i<g.length;i++){ if(hasTerm(normText,g[i])) return g[i]; }
+    return null;
+  }
+
+  // Buckets for the copy-paste Skills line
+  var SKILL_GROUPS=[
+   {name:"Programming Languages", items:["python","r","sql","scala","java","c++","c#","javascript","typescript","sas","matlab","bash","pyspark"]},
+   {name:"Databases & Warehouses", items:["mysql","postgresql","snowflake","redshift","bigquery","mongodb","databricks","redis","sql server","oracle"]},
+   {name:"Tools & Platforms", items:["tableau","power bi","looker","qlik","airflow","dbt","spark","hadoop","kafka","docker","kubernetes","aws","azure","gcp","git","jira","sagemaker","excel","plotly","snowpark"]},
+   {name:"ML & Analytics", items:["machine learning","deep learning","nlp","llm","pandas","numpy","scikit-learn","tensorflow","pytorch","keras","xgboost","statistics","regression","classification","clustering","forecasting","a/b testing","experimentation","causal inference","feature engineering","predictive modeling","computer vision","time series"]}
+  ];
+  // preferred / nice-to-have markers (terms after these weigh less)
+  var PREF_MARK=["nice to have","nice-to-have","preferred","bonus","a plus","pluses","would be great","not required","nice if","ideally"];
+
   var STOP=("a an the and or but if then else for to of in on at by with from as is are was were be been being "+
    "this that these those it its we you they i he she our your their my his her will would can could should may "+
    "might must have has had do does did not no yes about into over under out up down off above below more most "+
@@ -356,7 +439,9 @@
    "responsibilities responsibility skills skill including include includes company companies business "+
    "opportunity opportunities environment plus bonus nice want wants need needs help helps helping join us "+
    "new well like using use used across within our their you your they will who what able make made makes "+
-   "day days week weeks month months apply application located remote hybrid onsite office").split(/\s+/);
+   "day days week weeks month months apply application located remote hybrid onsite office "+
+   "build building define defining hiring decision decisions drive driving deliver delivering "+
+   "own owning turn turning partner partnering comfort clear").split(/\s+/);
   var STOPSET={}; STOP.forEach(function(w){STOPSET[w]=1;});
 
   function norm(t){ return (" "+t.toLowerCase()+" ").replace(/[^a-z0-9+#./ -]/g," ").replace(/\s+/g," "); }
@@ -374,6 +459,7 @@
     var toks=jdNorm.split(" ").filter(Boolean);
     var freq={};
     toks.forEach(function(w){
+      w=w.replace(/^[.\-\/]+|[.\-\/]+$/g,"");
       if(w.length<3) return;
       if(STOPSET[w]) return;
       if(/^[0-9]+$/.test(w)) return;
@@ -405,22 +491,42 @@
 
   function analyze(resume,jd){
     var rN=norm(resume), jN=norm(jd);
-    // required terms = known skills present in JD + top JD keywords
-    var req=[];
-    KNOWN.forEach(function(k){ if(hasTerm(jN,k)) req.push(k.trim()); });
-    var kws=extractKeywords(jN);
-    kws.forEach(function(k){
-      // skip if already covered by a known phrase
-      var covered=req.some(function(rq){ return rq.indexOf(k)>-1; });
-      if(!covered) req.push(k);
-    });
-    // dedupe
-    var seen={}, required=[];
-    req.forEach(function(t){ if(!seen[t]){seen[t]=1;required.push(t);} });
+    // preferred-section cutoff: terms after a "nice to have" marker weigh less
+    var prefIdx=-1;
+    PREF_MARK.forEach(function(m){ var ix=jN.indexOf(" "+m); if(ix>-1 && (prefIdx<0||ix<prefIdx)) prefIdx=ix; });
+    function jdWeight(term){
+      if(prefIdx<0) return 2;
+      var first=-1;
+      groupOf(term).forEach(function(s){ var k=jN.indexOf(s); if(k>-1 && (first<0||k<first)) first=k; });
+      return (first>-1 && first>prefIdx) ? 1 : 2;
+    }
 
-    var hit=[], miss=[];
-    required.forEach(function(t){ (hasTerm(rN,t)?hit:miss).push(t); });
-    var coverage = required.length ? (hit.length/required.length)*100 : 0;
+    // required terms = known skills in JD + top JD keywords, canonicalized + deduped
+    var reqRaw=[];
+    KNOWN.forEach(function(k){ if(hasTerm(jN,k)) reqRaw.push(canonical(k.trim())); });
+    extractKeywords(jN).forEach(function(k){
+      var c=canonical(k);
+      var covered=reqRaw.some(function(rq){ return rq.indexOf(c)>-1 || c.indexOf(rq)>-1; });
+      if(!covered) reqRaw.push(c);
+    });
+    var seen={}, required=[];
+    reqRaw.forEach(function(t){ if(!seen[t]){seen[t]=1;required.push(t);} });
+
+    // synonym-aware, weighted matching
+    var hit=[], miss=[], matchedPresent=[], mustMiss=[], wTot=0, wHit=0;
+    required.forEach(function(t){
+      var w=jdWeight(t); wTot+=w;
+      var present=presentSyn(rN,t);
+      if(present){ hit.push(t); matchedPresent.push(present); wHit+=w; }
+      else { miss.push(t); if(w>=2 && prefIdx>-1) mustMiss.push(t); }
+    });
+    var coverage = wTot ? (wHit/wTot)*100 : 0;
+
+    // years-of-experience ask vs a rough resume span
+    var jdYears=null, ym=jN.match(/(\d+)\s*\+?\s*(?:to\s*\d+\s*)?year/);
+    if(ym){ var yn=parseInt(ym[1],10); if(yn>0 && yn<=25) jdYears=yn; }
+    var yrs=(resume.match(/\b(?:19|20)\d{2}\b/g)||[]).map(Number), resumeYears=null;
+    if(yrs.length>=2){ resumeYears=Math.max(0, Math.min(45, Math.max.apply(null,yrs)-Math.min.apply(null,yrs))); }
 
     // title
     var title=detectTitle(jd,jN);
@@ -473,7 +579,9 @@
       overall:overall,
       coverageScore:clamp(coverage), titleScore:clamp(titleScore), impactScore:impactScore,
       hygiene:hygiene, structure:structure,
-      hit:hit, miss:miss, title:title, titleHit:titleHit,
+      hit:hit, miss:miss, matchedPresent:matchedPresent, mustMiss:mustMiss,
+      jdYears:jdYears, resumeYears:resumeYears,
+      title:title, titleHit:titleHit,
       impactRatio:ratio, bulletCount:bl.length, weak:weak, wordy:wordy, cliches:cliches,
       pronouns:pronouns, verbRatio:verbRatio, longBullets:longBullets, wc:wc, hygCount:hygCount,
       hasExp:hasExp, hasEdu:hasEdu, hasSkills:hasSkills, hasLink:hasLink,
@@ -518,6 +626,13 @@
       r2.push("No clear title detected in the posting. Make sure your target title still appears near the top of your resume.");
       r2.push("Use the standard industry title, not a company-specific one.");
     }
+    if(a.jdYears){
+      if(a.resumeYears!=null && a.resumeYears < a.jdYears-1){
+        r2.push("This role asks for <b>"+a.jdYears+"+ years</b>. Your dates read as about "+a.resumeYears+". Lead with your most senior scope and don't leave gaps that shrink the count.");
+      } else {
+        r2.push("This role asks for <b>"+a.jdYears+"+ years</b>. Put dates on every role and a seniority signal up top so it reads at a glance.");
+      }
+    }
     cats.push({name:"Title match", score:a.titleScore, recs:r2});
 
     // 3. Impact & numbers
@@ -558,6 +673,53 @@
     cats.push({name:"Structure & format", score:a.structure, recs:r5});
 
     return cats;
+  }
+
+  function escapeHtml(s){ return s.replace(/[&<>]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':'&gt;';}); }
+  function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); }
+  var SKILL_DISP={"sql":"SQL","aws":"AWS","gcp":"GCP","nlp":"NLP","llm":"LLM","etl":"ETL","bi":"BI",
+    "kpi":"KPIs","ml":"ML","dbt":"dbt","ci/cd":"CI/CD","power bi":"Power BI","a/b testing":"A/B testing",
+    "c++":"C++","c#":"C#","r":"R","sas":"SAS","eda":"EDA"};
+  function titleCase(t){
+    if(SKILL_DISP[t]) return SKILL_DISP[t];
+    return t.split(" ").map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(" ");
+  }
+  function buildSkillsLines(rN){
+    var lines=[];
+    SKILL_GROUPS.forEach(function(g){
+      var seen={}, disp=[];
+      g.items.forEach(function(it){ var c=canonical(it); if(!seen[c] && (hasTerm(rN,it)||hasTerm(rN,c))){ seen[c]=1; disp.push(titleCase(it)); } });
+      if(disp.length) lines.push(g.name+": "+disp.join(", "));
+    });
+    return lines;
+  }
+  function annotate(raw, a){
+    var esc=escapeHtml(raw), rn=norm(raw);
+    var green={}; (a.matchedPresent||[]).forEach(function(p){green[p]=1;});
+    var greenPhr=Object.keys(green).filter(function(p){
+      if(!p || p.length<=1) return false;
+      return SYN_MAP[p] || KNOWNSET[p] || KNOWNSET[canonical(p)];  // only real skills, not filler keywords
+    });
+    var red=[];
+    var wm=raw.match(new RegExp(WEAK_RE.source,"gi")); if(wm) wm.forEach(function(m){red.push(m);});
+    CLICHES.forEach(function(c){ if(rn.indexOf(" "+c+" ")>-1||rn.indexOf(" "+c+".")>-1||rn.indexOf(" "+c+",")>-1) red.push(c); });
+    WORDY.forEach(function(p){ if(rn.indexOf(" "+p[0]+" ")>-1) red.push(p[0]); });
+    var rseen={}, redPhr=[]; red.forEach(function(m){var k=m.toLowerCase(); if(!rseen[k]){rseen[k]=1; redPhr.push(m);}});
+    var greenSet={}; greenPhr.forEach(function(p){greenSet[p.toLowerCase()]=1;});
+    var redSet={}; redPhr.forEach(function(p){redSet[p.toLowerCase()]=1;});
+    var all=greenPhr.concat(redPhr).filter(Boolean).sort(function(x,y){return y.length-x.length;}).map(escRe);
+    var out=esc;
+    if(all.length){
+      var re=new RegExp("(?<![A-Za-z0-9])("+all.join("|")+")(?![A-Za-z0-9])","gi");
+      out=esc.replace(re,function(m){
+        var l=m.toLowerCase();
+        if(redSet[l]) return '<mark class="fix">'+m+'</mark>';
+        if(greenSet[l]) return '<mark class="ok">'+m+'</mark>';
+        return m;
+      });
+    }
+    out=out.replace(/\b(I|[Mm]e|[Mm]y|[Mm]yself)\b/g,'<mark class="fix">$1</mark>');
+    return out;
   }
 
   var lastR="",lastJ="";
@@ -602,11 +764,28 @@
 
     // chips
     var mc=$("#missChips"); mc.innerHTML="";
-    if(a.miss.length){ a.miss.slice(0,30).forEach(function(t){ var c=document.createElement("span"); c.className="chip miss"; c.textContent=t; mc.appendChild(c); }); }
+    if(a.miss.length){
+      var mustSet={}; (a.mustMiss||[]).forEach(function(t){mustSet[t]=1;});
+      var missSorted=a.miss.slice().sort(function(x,y){ return (mustSet[y]?1:0)-(mustSet[x]?1:0); });
+      missSorted.slice(0,30).forEach(function(t){
+        var c=document.createElement("span");
+        c.className="chip miss"+(mustSet[t]?" must":"");
+        c.textContent=(mustSet[t]?"★ ":"")+t;
+        if(mustSet[t]) c.title="Listed as a must-have in the posting";
+        mc.appendChild(c);
+      });
+    }
     else { mc.innerHTML='<span class="empty">Nothing missing. Your resume covers every term the posting emphasizes.</span>'; }
     var hc=$("#hitChips"); hc.innerHTML="";
     if(a.hit.length){ a.hit.slice(0,30).forEach(function(t){ var c=document.createElement("span"); c.className="chip hit"; c.textContent=t; hc.appendChild(c); }); }
     else { hc.innerHTML='<span class="empty">No overlap yet. Start by mirroring the posting’s core terms.</span>'; }
+
+    // skills line (from skills found on the resume)
+    var sk=buildSkillsLines(norm($("#resume").value));
+    $("#skillsBlock").textContent = sk.length ? sk.join("\n")
+      : "No known tools detected on your resume yet. Add the posting's core skills, then re-scan.";
+    // annotated resume
+    $("#annot").innerHTML = annotate($("#resume").value, a);
 
     $("#results").classList.add("show");
   }
@@ -664,6 +843,36 @@
   $("#exampleBtn").addEventListener("click",function(){
     $("#resume").value=EX_RESUME;$("#jd").value=EX_JD;countWords();run();
   });
+
+  // copy helpers
+  function fallbackCopy(txt){ var ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); }
+  function copyText(txt, btn){
+    var done=function(){ var o=btn.getAttribute("data-label")||btn.textContent; btn.setAttribute("data-label",o); btn.textContent="Copied"; setTimeout(function(){btn.textContent=o;},1400); };
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){fallbackCopy(txt);done();}); }
+    else { fallbackCopy(txt); done(); }
+  }
+  $("#copySkills").addEventListener("click",function(){ copyText($("#skillsBlock").textContent, this); });
+
+  // bullet rewriter
+  (function(){
+    var sel=$("#brVerb");
+    ["Reduced","Increased","Built","Automated","Optimized","Analyzed","Modeled","Engineered","Deployed","Designed","Led","Launched","Delivered","Cut","Accelerated","Forecasted"].forEach(function(v){
+      var o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o);
+    });
+    var out=$("#brOut");
+    function build(){
+      var v=sel.value, x=$("#brX").value.trim(), y=$("#brY").value.trim(), z=$("#brZ").value.trim();
+      if(!x && !y && !z){ out.textContent="Reduced churn by 10%, measured by 90-day retention, by deploying a predictive model."; out.style.opacity=".55"; return; }
+      out.style.opacity="1";
+      var s=v+" "+(x||"[what changed]");
+      if(y) s+=", measured by "+y;
+      s+=", by "+(z||"[what you did]");
+      out.textContent=s.replace(/\s+/g," ").trim()+".";
+    }
+    [sel,$("#brX"),$("#brY"),$("#brZ")].forEach(function(el){ el.addEventListener("input",build); });
+    build();
+    $("#brCopy").addEventListener("click",function(){ copyText(out.textContent, this); });
+  })();
 
   countWords();
 })();

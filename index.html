@@ -202,7 +202,7 @@
 
     <div class="card" id="annotCard" style="margin-top:16px">
       <h3>Your resume, annotated</h3>
-      <p class="sub"><span class="legend ok">matched term</span> <span class="legend fix">phrase to fix</span> &nbsp; Green terms line up with the posting; red marks weak openers, cliches, wordiness, and pronouns.</p>
+      <p class="sub"><span class="legend ok">matched term</span> <span class="legend fix">phrase to fix</span> &nbsp; Green terms line up with the posting; red marks weak openers, cliches, wordiness, and pronouns. <b>Hover any highlight for the fix.</b></p>
       <div class="annot" id="annot"></div>
     </div>
 
@@ -267,6 +267,10 @@
       font-size:13.5px;line-height:1.75;white-space:pre-wrap;word-break:break-word;color:var(--ink)}
     .annot mark.ok{background:color-mix(in srgb,var(--good) 26%,transparent);color:inherit;border-radius:3px;padding:0 2px}
     .annot mark.fix{background:color-mix(in srgb,var(--bad) 24%,transparent);color:inherit;border-radius:3px;padding:0 2px}
+    .annot mark[data-tip]{cursor:help;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;text-decoration-color:color-mix(in srgb,currentColor 35%,transparent)}
+    .tip{position:absolute;z-index:60;max-width:280px;background:#0f172a;color:#fff;
+      font-size:12.5px;line-height:1.45;padding:8px 11px;border-radius:8px;
+      box-shadow:0 8px 24px rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.12);pointer-events:none}
     .brewer{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
     .brewer select,.brewer input{font-family:inherit;font-size:14px;padding:10px 12px;
       border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);width:100%}
@@ -773,11 +777,13 @@
       if(!p || p.length<=1) return false;
       return SYN_MAP[p] || KNOWNSET[p] || KNOWNSET[canonical(p)];  // only real skills, not filler keywords
     });
-    var red=[];
-    var wm=raw.match(new RegExp(WEAK_RE.source,"gi")); if(wm) wm.forEach(function(m){red.push(m);});
-    CLICHES.forEach(function(c){ if(rn.indexOf(" "+c+" ")>-1||rn.indexOf(" "+c+".")>-1||rn.indexOf(" "+c+",")>-1) red.push(c); });
-    WORDY.forEach(function(p){ if(rn.indexOf(" "+p[0]+" ")>-1) red.push(p[0]); });
-    var rseen={}, redPhr=[]; red.forEach(function(m){var k=m.toLowerCase(); if(!rseen[k]){rseen[k]=1; redPhr.push(m);}});
+    // red phrases, each mapped to the specific advice shown on hover
+    var redAdvice={};
+    var wm=raw.match(new RegExp(WEAK_RE.source,"gi"));
+    if(wm) wm.forEach(function(m){ redAdvice[m.toLowerCase()]="Weak opener. Lead with the result, not the task."; });
+    CLICHES.forEach(function(c){ if(rn.indexOf(" "+c+" ")>-1||rn.indexOf(" "+c+".")>-1||rn.indexOf(" "+c+",")>-1) redAdvice[c]="Cliche recruiters skim past. Show the evidence instead."; });
+    WORDY.forEach(function(p){ if(rn.indexOf(" "+p[0]+" ")>-1) redAdvice[p[0]]="Wordy. Try “"+p[1]+"”."; });
+    var redPhr=Object.keys(redAdvice);
     var greenSet={}; greenPhr.forEach(function(p){greenSet[p.toLowerCase()]=1;});
     var redSet={}; redPhr.forEach(function(p){redSet[p.toLowerCase()]=1;});
     var all=greenPhr.concat(redPhr).filter(Boolean).sort(function(x,y){return y.length-x.length;}).map(escRe);
@@ -786,12 +792,12 @@
       var re=new RegExp("(?<![A-Za-z0-9])("+all.join("|")+")(?![A-Za-z0-9])","gi");
       out=esc.replace(re,function(m){
         var l=m.toLowerCase();
-        if(redSet[l]) return '<mark class="fix">'+m+'</mark>';
-        if(greenSet[l]) return '<mark class="ok">'+m+'</mark>';
+        if(redSet[l]) return '<mark class="fix" data-tip="'+(redAdvice[l]||"Consider revising this.")+'">'+m+'</mark>';
+        if(greenSet[l]) return '<mark class="ok" data-tip="Matches the posting. Keep it in the top third.">'+m+'</mark>';
         return m;
       });
     }
-    out=out.replace(/\b(I|[Mm]e|[Mm]y|[Mm]yself)\b/g,'<mark class="fix">$1</mark>');
+    out=out.replace(/\b(I|[Mm]e|[Mm]y|[Mm]yself)\b/g,'<mark class="fix" data-tip="Drop first-person pronouns on a resume. Start with the verb.">$1</mark>');
     return out;
   }
 
@@ -925,6 +931,29 @@
     else { fallbackCopy(txt); done(); }
   }
   $("#copySkills").addEventListener("click",function(){ copyText($("#skillsBlock").textContent, this); });
+
+  // advice tooltips on the annotated resume (hover on desktop, tap on touch)
+  (function(){
+    var tip=document.createElement("div"); tip.className="tip"; tip.hidden=true; document.body.appendChild(tip);
+    var current=null;
+    function show(el){
+      var t=el.getAttribute("data-tip"); if(!t) return;
+      tip.textContent=t; tip.hidden=false; current=el;
+      var r=el.getBoundingClientRect();
+      var top=r.top+window.scrollY - tip.offsetHeight - 8;
+      if(r.top - tip.offsetHeight - 8 < 6) top=r.bottom+window.scrollY + 8;
+      var left=r.left+window.scrollX + r.width/2 - tip.offsetWidth/2;
+      left=Math.max(8+window.scrollX, Math.min(left, window.scrollX+window.innerWidth-tip.offsetWidth-8));
+      tip.style.top=top+"px"; tip.style.left=left+"px";
+    }
+    function hide(){ tip.hidden=true; current=null; }
+    var annot=$("#annot");
+    annot.addEventListener("mouseover",function(e){ var m=e.target.closest && e.target.closest("mark[data-tip]"); if(m) show(m); });
+    annot.addEventListener("mouseout",function(e){ var m=e.target.closest && e.target.closest("mark[data-tip]"); if(m) hide(); });
+    annot.addEventListener("click",function(e){ var m=e.target.closest && e.target.closest("mark[data-tip]"); if(m){ (current===m)?hide():show(m); } });
+    document.addEventListener("click",function(e){ if(current && !(e.target.closest && e.target.closest("mark[data-tip]"))) hide(); });
+    window.addEventListener("scroll",hide,true);
+  })();
 
   // bullet rewriter
   (function(){

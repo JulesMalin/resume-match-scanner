@@ -176,7 +176,7 @@
 
     <div class="report-head">
       <h3>Category scores &amp; what to change</h3>
-      <p class="sub">Four things an ATS and a recruiter weigh. Each is scored out of 100, with the specific fixes for this posting.</p>
+      <p class="sub">Five things an ATS and a recruiter weigh. Each is scored out of 100, with the specific fixes for this posting.</p>
     </div>
     <div class="report" id="report"></div>
 
@@ -224,6 +224,7 @@
     .report-head h3{font-size:18px;font-weight:700}
     .report-head .sub{font-size:13.5px;color:var(--muted);margin-top:4px}
     .report{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    .report .cat:nth-child(5){grid-column:1 / -1}
     @media(max-width:720px){.report{grid-template-columns:1fr}}
     .cat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
       box-shadow:var(--shadow);padding:18px 20px;display:flex;flex-direction:column}
@@ -336,6 +337,14 @@
   var WORDY=[["in order to","to"],["due to the fact that","because"],["for the purpose of","for"],
    ["make a decision","decide"],["a number of","several"],["in the event that","if"],
    ["with the exception of","except"],["in spite of the fact that","although"]];
+  // Resume cliches recruiters skim past (external expertise; not in the guide)
+  var CLICHES=["team player","detail-oriented","detail oriented","hard worker","hard-working","hardworking",
+   "self-starter","self starter","go-getter","results-driven","results driven","results-oriented",
+   "proven track record","think outside the box","synergy","dynamic individual","motivated","passionate",
+   "excellent communication","strong communication skills","works well under pressure","fast learner",
+   "proactive","best of breed","value add","value-add","go the extra mile","wide range of","various tasks"];
+  // Expanded weak / passive openers (guide covers a few; rest is standard expertise)
+  var WEAK_RE=/responsible for|helped with|worked on|duties included|assisted with|involved in|tasked with|participated in|contributed to|in charge of|responsible of/g;
 
   var STOP=("a an the and or but if then else for to of in on at by with from as is are was were be been being "+
    "this that these those it its we you they i he she our your their my his her will would can could should may "+
@@ -434,29 +443,41 @@
     // long bullets (Ascend: keep bullets to ~2 lines)
     var longBullets=bl.filter(function(l){return l.length>240;}).length;
 
-    // wording & hygiene (Ascend: weak phrases, wordiness, length)
-    var weak=(rN.match(/responsible for|helped with|worked on|duties included|assisted with/g)||[]).length;
+    // wording & hygiene (guide: weak phrases, wordiness; plus cliches + pronouns from expertise)
+    var weak=(rN.match(WEAK_RE)||[]).length;
     var wordy=WORDY.filter(function(p){ return rN.indexOf(" "+p[0]+" ")>-1; });
+    var cliches=CLICHES.filter(function(c){ return rN.indexOf(" "+c+" ")>-1 || rN.indexOf(" "+c+".")>-1 || rN.indexOf(" "+c+",")>-1; });
+    var pronouns=(rN.match(/ (i|me|my|myself) /g)||[]).length;
     var wc=words(resume).length;
-    var hygiene=100 - weak*12 - wordy.length*8 - (verbRatio<0.3 && bl.length>=3 ? 15:0) - (wc>950?10:0);
+    var hygiene=100 - weak*12 - wordy.length*8 - cliches.length*8 - (pronouns>0?10:0) - (verbRatio<0.3 && bl.length>=3 ? 15:0);
     hygiene=clamp(hygiene);
 
-    var overall = clamp(coverage*0.45 + titleScore*0.15 + impactScore*0.20 + hygiene*0.20);
+    // structure & format (guide: sections, contact links, GPA, ordering, one page)
+    var hasExp=/experience|employment|work history/.test(rN);
+    var hasEdu=/education|university|college|bachelor|master|\bb\.?s\.?\b|\bm\.?s\.?\b|degree/.test(rN);
+    var hasSkills=/skills|technologies|technical/.test(rN);
+    var hasLinkedin=/linkedin/.test(rN);
+    var hasGithub=/github/.test(rN);
+    var hasPortfolio=/portfolio/.test(rN);
+    var hasGpa=/gpa/.test(rN);
+    var hasLink=hasLinkedin||hasGithub||hasPortfolio;
+    var structure=100 - (!hasExp?20:0) - (!hasSkills?18:0) - (!hasEdu?8:0) - (!hasLink?15:0)
+                  - (hasEdu&&!hasGpa?6:0) - (wc>950?15:0);
+    structure=clamp(structure);
 
-    var hygDetail = (weak+wordy.length) ? ((weak+wordy.length)+" to fix") : (verbRatio<0.3&&bl.length>=3?"weak verbs":"clean");
+    var overall = clamp(coverage*0.40 + titleScore*0.15 + impactScore*0.18 + hygiene*0.15 + structure*0.12);
+
+    var hygCount=weak+wordy.length+cliches.length+(pronouns>0?1:0);
 
     return {
       overall:overall,
-      metrics:[
-        {name:"Keyword coverage", pts:clamp(coverage), detail:hit.length+" of "+required.length+" terms"},
-        {name:"Title match", pts:clamp(titleScore), detail: title.role?(titleHit?"present":"missing"):"no clear title"},
-        {name:"Impact & numbers", pts:impactScore, detail: bl.length?(Math.round(ratio*100)+"% of bullets"):"no bullets found"},
-        {name:"Wording & verbs", pts:hygiene, detail: hygDetail}
-      ],
-      coverageScore:clamp(coverage), titleScore:clamp(titleScore), impactScore:impactScore, hygiene:hygiene,
+      coverageScore:clamp(coverage), titleScore:clamp(titleScore), impactScore:impactScore,
+      hygiene:hygiene, structure:structure,
       hit:hit, miss:miss, title:title, titleHit:titleHit,
-      impactRatio:ratio, bulletCount:bl.length, weak:weak, wordy:wordy,
-      verbRatio:verbRatio, longBullets:longBullets, wc:wc
+      impactRatio:ratio, bulletCount:bl.length, weak:weak, wordy:wordy, cliches:cliches,
+      pronouns:pronouns, verbRatio:verbRatio, longBullets:longBullets, wc:wc, hygCount:hygCount,
+      hasExp:hasExp, hasEdu:hasEdu, hasSkills:hasSkills, hasLink:hasLink,
+      hasLinkedin:hasLinkedin, hasGithub:hasGithub, hasPortfolio:hasPortfolio, hasGpa:hasGpa
     };
   }
 
@@ -481,6 +502,7 @@
     }
     if(a.coverageScore<60){ r1.push("You're under the ~60% overlap most matchers reward. Prioritize the posting's named tools and skills first."); }
     r1.push("Mirror the posting's exact phrasing. “A/B testing” and “experimentation” count as different terms to a matcher.");
+    r1.push("Lead with a one-line summary that names the target title and your 3 best-matched terms; it's the first thing scanned.");
     if(!a.miss.length){ r1.unshift("Strong overlap. Keep these terms in the top third, where a 6-second scan lands."); }
     cats.push({name:"Keyword coverage", score:a.coverageScore, recs:r1});
 
@@ -514,12 +536,26 @@
     // 4. Wording & verbs
     var r4=[];
     if(a.verbRatio<0.3 && a.bulletCount>=3){ r4.push("Open bullets with a <b>strong action verb</b>: Analyzed, Modeled, Engineered, Optimized, Predicted, Automated, Deployed."); }
-    if(a.weak){ r4.push("Rewrite <b>"+a.weak+" weak line"+(a.weak>1?"s":"")+"</b> that start with “responsible for” or “helped with.” Lead with what changed because of you."); }
+    if(a.weak){ r4.push("Rewrite <b>"+a.weak+" weak opener"+(a.weak>1?"s":"")+"</b> like “responsible for,” “worked on,” or “involved in.” Lead with what changed because of you."); }
+    if(a.cliches.length){ r4.push("Cut resume cliches: "+a.cliches.slice(0,4).map(function(c){return "“"+c+"”";}).join(", ")+". They're filler recruiters skim. Show the evidence instead."); }
+    if(a.pronouns){ r4.push("Drop first-person pronouns ("+a.pronouns+" found). Resumes omit “I,” “me,” and “my,” and start with the verb."); }
     if(a.wordy.length){ r4.push("Trim wordiness: "+a.wordy.map(function(p){return "“"+p[0]+"” → “"+p[1]+"”";}).join(", ")+"."); }
     if(a.longBullets){ r4.push("Shorten <b>"+a.longBullets+" long bullet"+(a.longBullets>1?"s":"")+"</b> to two lines. Five bullets max per role; reviewers rarely read past the first three."); }
-    if(a.wc>950){ r4.push("Trim to one page. You're at <b>"+a.wc+" words</b>; unless you have 8+ years, keep only the strongest lines."); }
     r4.push("Cut technical jargon a recruiter won't know. The first reader is often non-technical.");
     cats.push({name:"Wording & verbs", score:a.hygiene, recs:r4});
+
+    // 5. Structure & format
+    var r5=[];
+    if(!a.hasExp){ r5.push("Add a clear <b>Experience</b> section header. Parsers and recruiters both scan for it by name."); }
+    if(!a.hasSkills){ r5.push("Add a <b>Technical Skills</b> section, grouped into Programming Languages, Databases, and Tools & Technologies."); }
+    else { r5.push("Group your skills into Programming Languages, Databases, and Tools & Technologies, and list only what the posting cares about."); }
+    if(!a.hasLink){ r5.push("Add your <b>LinkedIn</b>, plus a <b>GitHub or portfolio</b> link. For data roles these are close to required."); }
+    else if(!a.hasGithub && !a.hasPortfolio){ r5.push("Add a <b>GitHub or portfolio</b> link so they can see real work, not just claims."); }
+    if(a.hasEdu && !a.hasGpa){ r5.push("Include your <b>GPA</b> in the Education section if it's solid."); }
+    r5.push("Order by experience: with 3+ years, lead with Experience and put Education last. Under 3 years, lead with Education.");
+    if(a.wc>950){ r5.push("Trim to <b>one page</b> ("+a.wc+" words now) unless you have 8+ years. Save as a text-based, one-column PDF."); }
+    else { r5.push("Keep it to one page, one column, and save as a text-based PDF so nothing scrambles."); }
+    cats.push({name:"Structure & format", score:a.structure, recs:r5});
 
     return cats;
   }
